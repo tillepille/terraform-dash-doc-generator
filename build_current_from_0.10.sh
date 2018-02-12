@@ -1,33 +1,34 @@
 #!/usr/bin/env bash
 
-set -x
+set -ex
 
-tag=$1
-if [ -z $tag ]; then
-    echo '"tag" must be specified'
+TAG=$1
+if [ -z $TAG ]; then
+    echo '"TAG" must be specified'
     exit 1
 fi
 
 CWD=$(pwd)
-BUILD_PATH="$CWD/build/$tag"
-TERRAFORM_PATH="$CWD/terraform-website"
-CONTENT_PATH=$TERRAFORM_PATH/content
+BUILD_PATH="${CWD}/build/$TAG"
+TERRAFORM_PATH="${CWD}/terraform-website"
+CONTENT_PATH="${TERRAFORM_PATH}/content"
 
-rm -rf $BUILD_PATH
+rm -rf "${BUILD_PATH}"
+mkdir -p "${BUILD_PATH}"
 
-git clone https://github.com/hashicorp/terraform-website.git || true
-mkdir -p $BUILD_PATH
-
-cd $TERRAFORM_PATH
+git clone "https://github.com/hashicorp/terraform-website.git" || true
+cd "${TERRAFORM_PATH}"
+git checkout -- .
 make sync
 
-cd $CONTENT_PATH
-
-bundle update
+cd "${CONTENT_PATH}"
+# bundle update
 bundle install
 
-cp $CWD/Rakefile .
+rm Rakefile || true
+# cp "${CWD}/Rakefile" .
+ln -s "${CWD}/Rakefile" || true
 
 rake
 
-mv Terraform.docset $BUILD_PATH
+mv Terraform.tgz "${BUILD_PATH}"
