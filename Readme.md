@@ -3,6 +3,13 @@ Terraform Dash Docs Generator
 
 This projects essence has been taken from https://github.com/f440/terraform/tree/docset and updated to generate docs until terraform v0.9.11 and from v0.10.0 and up.
 
+### Installation
+
+```bash
+rbenv install 2.3.1
+gem install bundler rake sqlite3
+```
+
 ### Terraform < v0.9.0
 All docs had been managed within terraform repo https://github.com/hashicorp/terraform and can be created by executing `./build_until_0.9.sh`.
 This will build the `Terraform.docset`s for all available tags (without RC and beta).
