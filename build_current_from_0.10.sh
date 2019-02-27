@@ -24,6 +24,7 @@ git clone "https://github.com/hashicorp/terraform-website.git" || true
 cd "${TERRAFORM_PATH}"
 git checkout -- .
 git checkout master
+git reset --hard origin/master
 make sync
 
 # Install gems
