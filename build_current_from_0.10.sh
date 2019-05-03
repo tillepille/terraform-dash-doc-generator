@@ -29,6 +29,8 @@ make sync
 
 # Install gems
 cd "${CONTENT_PATH}"
+sed -e "s|json (1.8.3.1)|json (1.8.3)|g" -i .bac Gemfile.lock
+rm Gemfile.lock
 # bundle update
 bundle install
 
