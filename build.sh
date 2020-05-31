@@ -13,7 +13,6 @@ fi
 CWD=$(pwd)
 BUILD_PATH="${CWD}/build/$TAG"
 TERRAFORM_PATH="${CWD}/terraform-website"
-CONTENT_PATH="${TERRAFORM_PATH}/content"
 
 # Clean build
 rm -rf "${BUILD_PATH}"
@@ -22,21 +21,16 @@ mkdir -p "${BUILD_PATH}"
 # Checkout and clean
 git clone "https://github.com/hashicorp/terraform-website.git" || true
 cd "${TERRAFORM_PATH}"
+git clean -fdx
 git checkout -- .
 git checkout master
 git reset --hard origin/master
 make sync
 
-# Install gems
-cd "${CONTENT_PATH}"
-sed -e "s|json (1.8.3.1)|json (1.8.3)|g" -i .bac Gemfile.lock
-rm Gemfile.lock
-# bundle update
-bundle install
-
 rm Rakefile || true
 # cp "${CWD}/Rakefile" .
 ln -s "${CWD}/Rakefile" || true
+cp "${CWD}/.ruby-version" ./
 
 # Build
 rake
