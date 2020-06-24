@@ -44,15 +44,11 @@ class Index
   end
 end
 
-task default: [:clean, :build, :setup, :copy, :create_index, :package]
+task default: [:clean, :setup, :copy, :create_index, :package]
 
 task :clean do
   rm_rf "build"
   rm_rf "Terraform.docset"
-end
-
-task :build do
-  sh "make build"
 end
 
 task :setup do
