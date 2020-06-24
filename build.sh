@@ -17,15 +17,11 @@ TERRAFORM_PATH="${CWD}/terraform-website"
 # Clean build
 rm -rf "${BUILD_PATH}"
 mkdir -p "${BUILD_PATH}"
-
-# Checkout and clean
-git clone "https://github.com/hashicorp/terraform-website.git" || true
+# # Checkout and clean
+git clone --recurse-submodules "https://github.com/hashicorp/terraform-website.git" || true
 cd "${TERRAFORM_PATH}"
-git clean -fdx
-git checkout -- .
-git checkout master
-git reset --hard origin/master
-make sync
+
+git submodule update --remote
 
 rm Rakefile || true
 # cp "${CWD}/Rakefile" .
