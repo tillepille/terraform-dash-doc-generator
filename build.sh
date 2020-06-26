@@ -26,7 +26,6 @@ git submodule update --remote
 rm Rakefile || true
 # cp "${CWD}/Rakefile" .
 ln -s "${CWD}/Rakefile" || true
-cp "${CWD}/.ruby-version" ./
 
 # Build
 rake
