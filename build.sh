@@ -1,33 +1,34 @@
 #!/usr/bin/env bash
 
-set -ex
+set -x
 
-# Read parameters
-TAG=$1
-if [ -z $TAG ]; then
-    echo '"TAG" must be specified'
+tag=$1
+if [ -z $tag ]; then
+    echo '"tag" must be specified'
     exit 1
 fi
 
-# Paths
+
 CWD=$(pwd)
-BUILD_PATH="${CWD}/build/$TAG"
-TERRAFORM_PATH="${CWD}/terraform-website"
+BUILD_PATH="$CWD/build/$tag"
+TERRAFORM_PATH="$CWD/terraform-website"
+CONTENT_PATH=$TERRAFORM_PATH/content
 
-# Clean build
-rm -rf "${BUILD_PATH}"
-mkdir -p "${BUILD_PATH}"
-# # Checkout and clean
-git clone --recurse-submodules "https://github.com/hashicorp/terraform-website.git" || true
-cd "${TERRAFORM_PATH}"
+rm -rf $BUILD_PATH
 
-git submodule update --remote
+git clone https://github.com/hashicorp/terraform-website.git || true
+mkdir -p $BUILD_PATH
 
-rm Rakefile || true
-# cp "${CWD}/Rakefile" .
-ln -s "${CWD}/Rakefile" || true
+cd $TERRAFORM_PATH
+make sync
 
-# Build
+cd $CONTENT_PATH
+
+bundle update
+bundle install
+
+cp $CWD/Rakefile .
+
 rake
 
-mv Terraform.tgz "${BUILD_PATH}"
+mv Terraform.tgz $BUILD_PATH

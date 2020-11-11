@@ -1,7 +1,6 @@
 require "nokogiri"
 require "erb"
 require "sqlite3"
-require "pathname"
 
 class Index
   attr_accessor :db
@@ -32,11 +31,7 @@ class Index
 
   def insert(type, path)
     doc = Nokogiri::HTML(File.open(path).read)
-    unless doc.title.nil?
-      name = doc.title.sub(" - Terraform by HashiCorp", "").sub(/.*: (.*)/, "\\1")
-    else
-      name = File.basename(path)
-    end
+    name = doc.title.sub(" - Terraform by HashiCorp", "").sub(/.*: (.*)/, "\\1")
     @db.execute <<-SQL, name: name, type: type, path: path
       INSERT OR IGNORE INTO searchIndex (name, type, path)
       VALUES(:name, :type, :path)
@@ -44,11 +39,25 @@ class Index
   end
 end
 
-task default: [:clean, :setup, :copy, :create_index, :package]
+task default: [:clean, :build, :setup, :copy, :create_index, :package]
 
 task :clean do
   rm_rf "build"
   rm_rf "Terraform.docset"
+end
+
+task :build do
+  config_extensions = ["activate :relative_assets", "set :relative_links, true", "set :strip_index_file, false"]
+  File.open("config.rb", "a") do |f|
+    config_extensions.each do |ce|
+      if File.readlines("config.rb").grep(Regexp.new ce).size == 0
+        f.puts ce
+      end
+    end
+  end
+
+  sh "bundle"
+  sh "bundle exec middleman build"
 end
 
 task :setup do
@@ -56,13 +65,13 @@ task :setup do
 
   # Icon
   # at older docs there is no retina icon
-  if File::exist? "content/source/assets/images/favicons/favicon-16x16.png" and File::exist? "content/source/assets/images/favicons/favicon-32x32.png"
-    cp "content/source/assets/images/favicons/favicon-16x16.png", "Terraform.docset/icon.png"
-    cp "content/source/assets/images/favicons/favicon-32x32.png", "Terraform.docset/icon@2x.png"
-  elsif File::exists? "content/source/assets/images/favicon.png"
-    cp "content/source/assets/images/favicon.png", "Terraform.docset/icon.png"
-  else
-    cp "content/source/images/favicon.png", "Terraform.docset/icon.png"
+  if File::exist? "source/assets/images/favicons/favicon-16x16.png" and File::exist? "source/assets/images/favicons/favicon-32x32.png"
+    cp "source/assets/images/favicons/favicon-16x16.png", "Terraform.docset/icon.png"
+    cp "source/assets/images/favicons/favicon-32x32.png", "Terraform.docset/icon@2x.png"
+  elsif File::exists? "source/assets/images/favicon.png"
+    cp "source/assets/images/favicon.png", "Terraform.docset/icon.png"
+  # else
+  #   cp "source/images/favicon.png", "Terraform.docset/icon.png"
   end
 
   # Info.plist
@@ -94,10 +103,10 @@ end
 
 task :copy do
   file_list = []
-  Dir.chdir("content/build") { file_list = Dir.glob("**/*").sort }
+  Dir.chdir("build") { file_list = Dir.glob("**/*").sort }
 
   file_list.each do |path|
-    source = "content/build/#{path}"
+    source = "build/#{path}"
     target = "Terraform.docset/Contents/Resources/Documents/#{path}"
 
     case
@@ -107,10 +116,8 @@ task :copy do
       next
     when source.match(/\.html$/)
       doc = Nokogiri::HTML(File.open(source).read)
-      
-      unless doc.title.nil?
-        doc.title = doc.title.sub(" - Terraform by HashiCorp", "")
-      end
+
+      doc.title = doc.title.sub(" - Terraform by HashiCorp", "")
 
       doc.xpath("//a[contains(@class, 'anchor')]").each do |e|
         a = Nokogiri::XML::Node.new "a", doc
@@ -120,22 +127,12 @@ task :copy do
         e.previous = a
       end
 
-      doc.xpath("//link[starts-with(@href, '/')]").each do |e|
-        e["href"] = Pathname.new(e["href"]).relative_path_from(Pathname.new("/#{path}").dirname).to_s
-      end
-
       doc.xpath('//script').each do |script|
         if script.text != ""
           script.remove
         end
       end
-      doc.xpath("//aside").each do |e|
-        e.remove
-      end
       doc.xpath("id('header')").each do |e|
-        e.remove
-      end
-      doc.xpath("id('inner-header-grid')").each do |e|
         e.remove
       end
       doc.xpath("//div[contains(@class, 'mega-nav-sandbox')]").each do |e|
@@ -153,9 +150,6 @@ task :copy do
 
       doc.xpath('//div[@id="inner"]/h1').each do |e|
         e["style"] = "margin-top: 0px"
-      end
-      doc.xpath("//div[contains(@class, 'container')]").each do |e|
-        e["style"] = "width: 100%; margin-top: 30px; margin-left: 30px; margin-right: 30px;"
       end
       doc.xpath("//div[contains(@role, 'main')]").each do |e|
         e["style"] = "width: 100%"
